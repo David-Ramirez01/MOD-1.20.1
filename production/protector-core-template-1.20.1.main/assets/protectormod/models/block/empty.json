@@ -1,0 +1,4 @@
+{
+  "parent": "minecraft:block/air",
+  "textures": { "particle": "minecraft:block/iron_block" }
+}

@@ -1,0 +1,4 @@
+accessWidener	v1	named
+
+# Hacer pública la lista de bloques afectados en las explosiones
+accessible	field	net/minecraft/world/level/Explosion	affectedBlockPositions	Ljava/util/List;
