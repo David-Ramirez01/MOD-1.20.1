@@ -315,6 +315,7 @@ public class ProtectionCoreBlockEntity extends BlockEntity implements ExtendedSc
 
         ListTag permsList = tag.getList("PermissionsList", 10);
         permissionsMap.clear();
+        nameCache.clear();
         for (int i = 0; i < permsList.size(); i++) {
             CompoundTag pTag = permsList.getCompound(i);
             UUID uuid = pTag.getUUID("uuid");

@@ -2,6 +2,7 @@ package net.david.mod.network;
 
 import net.david.mod.blockentity.ProtectionCoreBlockEntity;
 import net.david.mod.client.ProtectionAreaEffect;
+import net.david.mod.client.screen.ProtectionCoreScreen;
 import net.david.mod.util.ProtectionDataManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft; // Importante para tickEffects
@@ -73,7 +74,26 @@ public class ModNetworkingClient {
                 ACTIVE_EFFECTS.add(new ProtectionAreaEffect(pos, radius, 200, isAdmin));
             });
         });
+        ClientPlayNetworking.registerGlobalReceiver(ModNetworking.REMOVE_PLAYER_ID, (client, handler, buf, responseSender) -> {
+            // Si el servidor envía este paquete de vuelta confirmando la eliminación
+            BlockPos pos = buf.readBlockPos();
+            String name = buf.readUtf();
+
+            client.execute(() -> {
+                if (client.level != null && client.level.getBlockEntity(pos) instanceof ProtectionCoreBlockEntity core) {
+                    core.removePlayerPermissions(name); // Actualiza la lista local del cliente
+
+                    // Si la pantalla actual es nuestra GUI, la obligamos a reconstruirse
+                    if (client.screen instanceof ProtectionCoreScreen screen) {
+                        screen.refreshGui();
+                    }
+                }
+            });
+        });
+
     }
+
+
 
     /**
      * CORRECCIÓN: Ahora pasamos el level al método tick

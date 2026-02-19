@@ -316,49 +316,57 @@ public class ProtectionCoreScreen extends AbstractContainerScreen<ProtectionCore
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int x = this.leftPos;
-        int y = this.topPos;
-        int listX = x - 105;
-        int listY = y + 10;
+        int listX = this.leftPos - 105;
+        int listY = this.topPos + 10;
         var core = this.menu.getBlockEntity();
 
         if (core != null && this.minecraft != null && this.minecraft.player != null) {
-            // Obtenemos la lista de UUIDs (Asegúrate que en el BE se llame getTrustedPlayers)
-            List<java.util.UUID> guests = core.getTrustedPlayers();
+
+            // Usamos la MISMA lista que usas para dibujar (getTrustedNames)
+            List<String> guests = core.getTrustedNames();
+            String ownerName = core.getOwnerName();
             int offset = 1;
 
-            for (java.util.UUID guestUuid : guests) {
-                String name = core.getNameFromUUID(guestUuid);
-                if (name.equalsIgnoreCase(core.getOwnerName())) continue;
+            for (String name : guests) {
+                if (name.equalsIgnoreCase(ownerName)) continue;
 
                 int entryY = listY + 24 + (offset * 13);
 
-                // 1. CLICK EN EL NOMBRE
-                if (mouseX >= listX + 11 && mouseX <= listX + 70 && mouseY >= entryY && mouseY <= entryY + 10) {
+                // 1. CLICK EN EL NOMBRE (Área más generosa)
+                if (mouseX >= listX + 8 && mouseX <= listX + 72 && mouseY >= entryY - 2 && mouseY <= entryY + 12) {
                     this.nameInput.setValue(name);
+                    this.nameInput.setFocused(true); // Forzar foco para que el usuario pueda interactuar
+                    this.minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5f, 1.0f);
                     return true;
                 }
 
                 // 2. CLICK EN LA [X]
                 int removeBtnX = listX + 76;
-                if (mouseX >= removeBtnX && mouseX <= removeBtnX + 15 && mouseY >= entryY && mouseY <= entryY + 10) {
-                    // LLAMADA CORREGIDA: Usamos el método local que definiste abajo
-                    this.sendRemovePlayerPacket(guestUuid);
+                if (mouseX >= removeBtnX - 2 && mouseX <= removeBtnX + 15 && mouseY >= entryY - 2 && mouseY <= entryY + 12) {
 
-                    // Sonido corregido
+                    // Enviar el paquete directamente usando el nombre
+                    FriendlyByteBuf buf = PacketByteBufs.create();
+                    buf.writeBlockPos(core.getBlockPos());
+                    buf.writeUtf(name);
+                    ClientPlayNetworking.send(ModNetworking.REMOVE_PLAYER_ID, buf);
+
                     this.minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5f, 1.0f);
                     return true;
                 }
                 offset++;
             }
         }
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private void sendRemovePlayerPacket(java.util.UUID uuid) {
+    private void sendRemovePlayerPacket(java.util.UUID guestUuid) {
+        var core = this.menu.getBlockEntity();
+        if (core == null) return;
+        String name = core.getNameFromUUID(guestUuid);
         FriendlyByteBuf buf = PacketByteBufs.create();
-        buf.writeBlockPos(this.menu.getBlockEntity().getBlockPos());
-        buf.writeUUID(uuid);
+        buf.writeBlockPos(core.getBlockPos());
+        buf.writeUtf(name);
         ClientPlayNetworking.send(ModNetworking.REMOVE_PLAYER_ID, buf);
     }
 
@@ -366,4 +374,10 @@ public class ProtectionCoreScreen extends AbstractContainerScreen<ProtectionCore
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(this.font, "§b§o" + this.playerInventoryTitle.getString(), this.inventoryLabelX, this.inventoryLabelY, 0xFFFFFF, true);
     }
+
+    public void refreshGui() {
+        this.rebuildWidgets();
+    }
+
+
 }

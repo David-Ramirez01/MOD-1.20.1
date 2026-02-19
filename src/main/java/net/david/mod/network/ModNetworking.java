@@ -12,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -167,12 +168,23 @@ public class ModNetworking {
                     // Guardamos la invitación en el manager
                     InviteManager.addInvite(targetPlayer.getUUID(), pos, player.getUUID());
 
-                    // Mensaje interactivo para el invitado
-                    Component inviteMsg = Component.literal("§b§l[!] §f" + player.getName().getString() + " §7te invita a su protección. ")
-                            .append(Component.literal("§a§l[ACEPTAR]")
-                                    .withStyle(style -> style
-                                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/protector accept"))
-                                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("§7Click para unirte")))));
+                    // 1. Mensaje base
+                    MutableComponent inviteMsg = Component.literal("§b§l[!] §f" + player.getName().getString() + " §7te invita a su protección.\n");
+
+                    // 2. Botón de ACEPTAR
+                    Component btnAccept = Component.literal("§a§l[ACEPTAR]")
+                            .withStyle(style -> style
+                                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/protector accept"))
+                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("§7Click para unirte"))));
+
+                    // 3. Botón de RECHAZAR
+                    Component btnDeny = Component.literal(" §c§l[RECHAZAR]")
+                            .withStyle(style -> style
+                                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/protector deny"))
+                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("§7Click para ignorar"))));
+
+                    // Unimos todo
+                    inviteMsg.append(btnAccept).append(" ").append(btnDeny);
 
                     targetPlayer.sendSystemMessage(inviteMsg);
                     player.displayClientMessage(Component.literal("§eInvitación enviada a " + targetName), true);
