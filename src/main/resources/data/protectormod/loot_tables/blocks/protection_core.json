@@ -11,7 +11,11 @@
       ],
       "conditions": [
         {
-          "condition": "minecraft:survives_explosion"
+          "condition": "minecraft:block_state_property",
+          "block": "protectormod:protection_core",
+          "properties": {
+            "half": "lower"
+          }
         }
       ]
     }

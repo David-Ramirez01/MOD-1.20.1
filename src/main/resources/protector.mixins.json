@@ -6,7 +6,13 @@
 	"mixins": [
 		"ExplosionMixin",
 		"FireSpreadMixin",
-		"HungerMixin"
+		"HungerMixin",
+		"ItemDropMixin",
+		"ItemPickupMixin",
+		"MobGriefMixin",
+		"EnderpearlMixin",
+		"CropTrampleMixin",
+		"SpawneoMOB"
 	],
 	"injectors": {
 		"defaultRequire": 1

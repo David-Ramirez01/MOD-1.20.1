@@ -57,50 +57,27 @@ public class ProtectorMod implements ModInitializer {
             ClanCommands.register(dispatcher);
         });
 
-        // 3. Eventos
+        // 3. Registro de Eventos de Interacción (Bloques/Entidades)
         ProtectionEvents.register();
 
-        // 4. Tick del Servidor (Visualizador Persistente)
+        // 4. Un solo Tick del Servidor para todo (Optimizado)
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            // Ejecutamos cada 20 ticks (1 segundo) para no saturar la red
-            if (server.getTickCount() % 20 != 0) return;
-
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (ClanCommands.VISUALIZER_ENABLED.contains(player.getUUID())) {
-                    ProtectionDataManager manager = ProtectionDataManager.get(player.level());
-                    BlockPos playerPos = player.blockPosition();
-
-                    // Buscar el core más cercano en un radio de 64 bloques
-                    manager.getAllCores().values().stream()
-                            .filter(core -> core.pos().distSqr(playerPos) < 4096)
-                            .findFirst()
-                            .ifPresent(core -> {
-                                FriendlyByteBuf buf = PacketByteBufs.create();
-                                buf.writeBlockPos(core.pos());
-                                buf.writeInt(core.radius());
-                                // USAMOS EL ID DE PARTÍCULAS REFACTORIZADO
-                                ServerPlayNetworking.send(player, ModNetworking.SPAWN_BOUNDARY_PARTICLES, buf);
-                            });
-                }
-            }
-        });
-
-// 4. Tick del Servidor (Visualizador y Lógica de Protección)
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            // Calculamos el tick de segundo una sola vez
             boolean isSecondTick = server.getTickCount() % 20 == 0;
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                // A. Lógica de Protección (Cada Tick): Mensajes, Hambre, Eyección
+                // A. Lógica de Protección (Hambre, Mensajes, Expulsión)
+                // Se ejecuta cada tick para que la respuesta sea instantánea
                 ProtectionEvents.onPlayerTick(player);
 
-                // B. Lógica del Visualizador (Cada 1 segundo): Partículas
+                // B. Visualizador de Partículas (Solo cada segundo para ahorrar ancho de banda)
                 if (isSecondTick && ClanCommands.VISUALIZER_ENABLED.contains(player.getUUID())) {
                     sendVisualizerParticles(player);
                 }
             }
         });
 
-        LOGGER.info("Protector Mod inicializado correctamente.");
+        LOGGER.info("Protector Core (Enterprise Edition) inicializado correctamente.");
     }
 
     private void sendVisualizerParticles(ServerPlayer player) {

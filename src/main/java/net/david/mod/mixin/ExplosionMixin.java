@@ -26,7 +26,6 @@ public abstract class ExplosionMixin {
 
         ProtectionDataManager.CoreEntry entry = data.getCoreAt(explosionPos);
 
-        // Solo cancelamos si hay un core Y la flag 'allowExplosions' es FALSE
         if (entry != null && !entry.allowExplosions()) {
             ci.cancel();
         }

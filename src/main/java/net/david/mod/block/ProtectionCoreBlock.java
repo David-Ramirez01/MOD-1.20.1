@@ -114,28 +114,41 @@ public class ProtectionCoreBlock extends Block implements EntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // 1. Solo ejecutar si el bloque realmente cambió (no si solo cambió un estado como el giro)
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide && level instanceof ServerLevel sLevel) {
-                // Si rompemos la base (LOWER), limpiamos todo el sistema
-                if (state.getValue(HALF) == DoubleBlockHalf.LOWER) {
+                DoubleBlockHalf half = state.getValue(HALF);
+
+                // 2. Lógica centralizada en la BASE (LOWER)
+                if (half == DoubleBlockHalf.LOWER) {
                     BlockEntity be = level.getBlockEntity(pos);
                     if (be instanceof ProtectionCoreBlockEntity core) {
+                        // Limpiar datos del manager
                         ProtectionDataManager.get(sLevel).removeCore(pos);
                         ProtectionDataManager.get(sLevel).syncToAll(sLevel);
 
-                        // Eliminar clan asociado si el dueño rompe su core
+                        // Eliminar clan si existe
                         if (core.getOwnerUUID() != null) {
                             ClanSavedData.get(sLevel.getServer()).deleteClan(core.getOwnerUUID());
                         }
                     }
                 }
 
-                // Limpieza de la otra mitad del bloque
-                BlockPos otherPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos.above() : pos.below();
-                if (level.getBlockState(otherPos).is(this)) {
+                // 3. Limpieza de la otra mitad con FLAGS específicas
+                BlockPos otherPos = (half == DoubleBlockHalf.LOWER) ? pos.above() : pos.below();
+                BlockState otherState = level.getBlockState(otherPos);
+
+                if (otherState.is(this) && otherState.getValue(HALF) != half) {
+                    // El flag 35 (1 | 2 | 32) evita que el bloque superior intente soltar
+                    // su propio ítem o dispare eventos de "block broken" redundantes.
                     level.setBlock(otherPos, Blocks.AIR.defaultBlockState(), 35);
+
+                    // Nivel de importancia: Enviamos el evento de partículas de destrucción
+                    level.levelEvent(2001, otherPos, Block.getId(otherState));
                 }
             }
+
+            // 4. Llamar al super después de nuestra lógica interna
             super.onRemove(state, level, pos, newState, isMoving);
         }
     }

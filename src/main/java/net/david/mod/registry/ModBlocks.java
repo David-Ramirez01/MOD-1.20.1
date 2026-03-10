@@ -15,8 +15,8 @@ public class ModBlocks {
     // Usamos FabricBlockSettings para acceder a métodos como nonOpaque()
     public static final Block PROTECTION_CORE = new ProtectionCoreBlock(
             FabricBlockSettings.copyOf(Blocks.IRON_BLOCK)
-                    .strength(5.0f)
-                    .requiresCorrectToolForDrops()
+                    .strength(3.0f)
+                    .nonOpaque()
                     .noOcclusion()
     );
 
